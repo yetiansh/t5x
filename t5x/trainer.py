@@ -45,6 +45,7 @@ from t5x import train_state as train_state_lib
 from t5x import utils
 import typing_extensions
 
+import alpa
 
 Array = Union[np.ndarray, jnp.ndarray]
 BatchSpec = Mapping[str, jax.ShapeDtypeStruct]
@@ -601,7 +602,11 @@ class BaseTrainer(abc.ABC):
     """Partitioned eval step."""
     raise NotImplementedError
 
+import os
+pipeline_schedule = os.getenv("PIPELINE_SCHEDULE")
+method = alpa.PipeshardParallel(pipeline_schedule=pipeline_schedule, stage_option="auto")
 
+@alpa.parallelize(method=method)
 def accumulate_grads_microbatched(
     model: models.BaseModel,
     train_state: train_state_lib.TrainState,
@@ -631,7 +636,7 @@ def accumulate_grads_microbatched(
   """
   batch_size = next(iter(batch.values())).shape[0]
 
-  grad_fn = jax.value_and_grad(model.loss_fn, has_aux=True)
+  grad_fn = alpa.value_and_grad(model.loss_fn, has_aux=True)
 
   # We assume that the model loss_fn supports flax mutables if and only if
   # the train state includes non-empty flax mutables.

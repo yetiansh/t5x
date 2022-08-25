@@ -711,6 +711,15 @@ if __name__ == '__main__':
 
   def _main(argv: Sequence[str]):
     """True main function."""
+    # init ray and alpa
+    import alpa
+    import ray
+
+    alpa.util.disable_tqdm_globally()
+
+    ray.init()
+    alpa.init(cluster="ray")
+
     if len(argv) > 1:
       raise app.UsageError('Too many command-line arguments.')
 
@@ -745,6 +754,6 @@ if __name__ == '__main__':
         FLAGS.gin_bindings)
     train_using_gin()
     jax.effects_barrier()
-
+    alpa.shutdown()
 
   gin_utils.run(main)
